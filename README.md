@@ -185,6 +185,21 @@ private void checkAccount() {
 public static int APP_ID = 1932276;
 public static String APP_HASH = "9414555e3ec993309622880697baed7f";
 ```
+### App Icon
+* 將`mipmap`內各size的icon複製至專案內
+* 於`mipmap-anydpi-v26`檔案夾內將所有xml內容改為以下
+```
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@mipmap/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>
+```
+### Google json
+* 替換 `google json`，內容需含有 `org.telegram.messenger.taylorgray`
+
+### release.keystore
+* 複製`release.keystore` 至 `TMessagesProj/config`
 
 ### License
 ```
