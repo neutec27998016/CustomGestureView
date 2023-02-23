@@ -1,11 +1,12 @@
 package com.neutec.customgestureviewlib;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 
-import com.neutec.customgestureview.CustomGestureActivity;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.neutec.customgestureview.activity.CustomGestureActivity;
 import com.neutec.customgestureview.setting.UserData;
 import com.neutec.customgestureview.utility.PatternLockUtils;
 import com.neutec.customgestureview.utility.TimerUtils;
@@ -15,7 +16,7 @@ import java.util.ArrayList;
 
 import kotlin.Unit;
 
-public class JavaActivity extends Activity {
+public class JavaActivity extends AppCompatActivity {
     private final UnitUtils globalVariable = new UnitUtils();
     private final CountDownTimer timerUtils = new TimerUtils().getCountDownTimer();
 

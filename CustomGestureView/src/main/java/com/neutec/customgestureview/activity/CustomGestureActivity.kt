@@ -1,4 +1,4 @@
-package com.neutec.customgestureview
+package com.neutec.customgestureview.activity
 
 import android.app.AlertDialog
 import android.content.Intent
@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import com.neutec.customgestureview.R
 import com.neutec.customgestureview.setting.SettingAccountDialog
 import com.neutec.customgestureview.utility.PatternLockUtils.*
 import com.neutec.customgestureview.data.VersionInfo
@@ -36,6 +37,7 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
     private lateinit var binding: ActivityGestureLookBinding
     private var updateDialog: AlertDialog? = null
     private var forgotDialog: AlertDialog? = null
+    private var isCheckAppUpdateFinish = false
     private val gestureViewModel: GestureViewModel by lazy {
         ViewModelProvider(this)[GestureViewModel::class.java]
     }
@@ -46,11 +48,9 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
         setStatusBar()
         binding = ActivityGestureLookBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         setGestureViewModel()
         gestureViewModel.checkGestureLockFromSharedPreferences(this)
         initView()
-        checkAppVersion()
     }
 
     override fun onResume() {
@@ -66,6 +66,7 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
             }
         }
 
+        checkAppVersion()
         EmergencyStatusUtils().checkEmergencyStatus()
         timer.start()
     }
@@ -93,6 +94,7 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
     }
 
     private fun checkAppVersion() {
+        isCheckAppUpdateFinish = false
         val apiService = AppClientManager.client.create(ApiService::class.java)
         apiService.getVersionData().enqueue(object : Callback<VersionData> {
             override fun onResponse(call: Call<VersionData>, response: Response<VersionData>) {
@@ -103,7 +105,7 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
                             data?.version,
                             data?.downloadUrl
                         ), UnitUtils.appVersion
-                    )
+                    ) && !isUpdateDialogShowed
                 ) {
                     showUpdateDialog(
                         VersionInfo(
@@ -112,10 +114,13 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
                             data?.downloadUrl
                         )
                     )
+                } else {
+                    isCheckAppUpdateFinish = true
                 }
             }
 
             override fun onFailure(call: Call<VersionData>, t: Throwable) {
+                isCheckAppUpdateFinish = true
             }
         })
     }
@@ -131,6 +136,7 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
                         getString(R.string.Cancel)
                     ) { _, _ ->
                         isUpdateDialogShowed = true
+                        isCheckAppUpdateFinish = true
                     }
                 }
                 builder.setNegativeButton(
@@ -304,7 +310,6 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
     }
 
     private fun initView() {
-
         binding.apply {
             gestureView.apply {
                 setPainter(CirclePainter())
@@ -351,7 +356,9 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
     }
 
     private fun finishActivity() {
-        isNeedtoShowGestureLock = false
-        finish()
+        if (isCheckAppUpdateFinish) {
+            isNeedtoShowGestureLock = false
+            finish()
+        }
     }
 }

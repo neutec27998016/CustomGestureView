@@ -3,7 +3,7 @@ package com.neutec.customgestureviewlib
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.neutec.customgestureview.CustomGestureActivity
+import com.neutec.customgestureview.activity.CustomGestureActivity
 import com.neutec.customgestureview.setting.UserData
 import com.neutec.customgestureview.utility.PatternLockUtils
 import com.neutec.customgestureview.utility.UnitUtils
