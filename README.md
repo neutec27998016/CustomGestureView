@@ -53,11 +53,13 @@ repositories {
 * 引入
 ```java
 import static org.telegram.messenger.BuildVars.BUILD_VERSION_STRING;
-import com.neutec.customgestureview.CustomGestureActivity;
+import com.neutec.customgestureview.activity.CustomGestureActivity;
 import com.neutec.customgestureview.setting.UserData;
 import com.neutec.customgestureview.utility.PatternLockUtils;
 import com.neutec.customgestureview.utility.TimerUtils;
 import com.neutec.customgestureview.utility.UnitUtils;
+import kotlin.Unit;
+import android.os.CountDownTimer;
 ```
     
 * 宣告 `UnitUtils` 與 `CountDownTimer`
@@ -143,9 +145,9 @@ countDownTimer.cancel();
 * 引入
 ```java
 import static org.telegram.messenger.BuildVars.BUILD_VERSION_STRING;
-import com.jeff.customgesturelib.setting.SettingAccountDialog;
-import com.jeff.customgesturelib.setting.UserData;
-import com.jeff.customgesturelib.utility.PatternLockUtils;
+import com.neutec.customgestureview.setting.SettingAccountDialog;
+import com.neutec.customgestureview.setting.UserData;
+import com.neutec.customgestureview.utility.PatternLockUtils;
 ```
 * 於`needFinishActivity` 尾端新增 `checkAccount()`
 ```kotlin
@@ -186,13 +188,13 @@ public static int APP_ID = 1932276;
 public static String APP_HASH = "9414555e3ec993309622880697baed7f";
 ```
 ### App Icon
-* 將`mipmap`內各size的icon複製至專案內
-* 於`mipmap-anydpi-v26`檔案夾內將所有xml內容改為以下
+* 於`mipmap-anydpi-v26`檔案夾內將'ic_launcher_round.xml'內容改為以下
 ```
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@mipmap/ic_launcher_background"/>
-    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+    <background android:drawable="@mipmap/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/icon_plane" />
 </adaptive-icon>
 ```
 ### Google json
