@@ -1,9 +1,12 @@
 package com.neutec.customgestureview.activity
 
+import android.app.ActivityManager
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.Window
@@ -14,6 +17,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import com.neutec.customgestureview.App
 import com.neutec.customgestureview.R
 import com.neutec.customgestureview.setting.SettingAccountDialog
 import com.neutec.customgestureview.utility.PatternLockUtils.*
@@ -75,6 +79,10 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
         super.onPause()
         timer.cancel()
     }
+
+    override fun onBackPressed() {
+    }
+
 
     override fun onStarted() {
     }
