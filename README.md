@@ -104,6 +104,12 @@ private Unit onForceLogoutUnit() {
         }
         PatternLockUtils.setUserIdSet(new ArrayList<>(), this);
     }
+    
+    //清除 app data
+    ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        am.clearApplicationUserData();
+    }
 
     return Unit.INSTANCE;
 }
