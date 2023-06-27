@@ -83,6 +83,7 @@ private Unit onLogoutUnit() {
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             if (userIdSet.contains(String.valueOf(UserConfig.getInstance(a).getClientUserId()))) {
                 switchToAccount(a, true);
+                clearCache();
                 MessagesController.getInstance(a).performLogout(1);
                 isLogout = true;
             }
@@ -104,13 +105,15 @@ private Unit onForceLogoutUnit() {
         }
         PatternLockUtils.setUserIdSet(new ArrayList<>(), this);
     }
-    
+  
+    clearCache();
+  
     //清除 app data
     ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
         am.clearApplicationUserData();
     }
-
+  
     return Unit.INSTANCE;
 }
 ```
@@ -133,6 +136,85 @@ private Unit onSettingAccountUnit() {
     }
     PatternLockUtils.setActiveAccountList(list);
     return Unit.INSTANCE;
+}
+```
+```java
+private void clearCache() {
+    AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
+    accountInstance.getFileLoader().cancelLoadAllFiles();
+    accountInstance.getFileLoader().getFileLoaderQueue().postRunnable(() -> Utilities.globalQueue.postRunnable(() -> {
+        Utilities.Callback<Float> updateProgress = t -> {
+        };
+        for (int a = 0; a < 8; a++) {
+            int type = -1;
+            int documentsMusicType = 0;
+            if (a == 0) {
+                type = FileLoader.MEDIA_DIR_IMAGE;
+            } else if (a == 1) {
+                type = FileLoader.MEDIA_DIR_VIDEO;
+            } else if (a == 2) {
+                type = FileLoader.MEDIA_DIR_DOCUMENT;
+                documentsMusicType = 1;
+            } else if (a == 3) {
+                type = FileLoader.MEDIA_DIR_DOCUMENT;
+                documentsMusicType = 2;
+            } else if (a == 4) {
+                type = FileLoader.MEDIA_DIR_AUDIO;
+            } else if (a == 5) {
+                type = 100;
+            } else if (a == 6) {
+                documentsMusicType = 5;
+                type = FileLoader.MEDIA_DIR_CACHE;
+            } else if (a == 7) {
+                documentsMusicType = 4;
+                type = FileLoader.MEDIA_DIR_CACHE;
+            }
+            if (type == -1) {
+                continue;
+            }
+            File file;
+            if (type == 100) {
+                file = new File(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE), "acache");
+            } else {
+                file = FileLoader.checkDirectory(type);
+            }
+            if (file != null) {
+                CacheControlActivity.cleanDirJava(file.getAbsolutePath(), documentsMusicType, null, updateProgress);
+            }
+            if (type == 100) {
+                file = FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE);
+                if (file != null) {
+                    CacheControlActivity.cleanDirJava(file.getAbsolutePath(), 3, null, updateProgress);
+                }
+            }
+            if (type == FileLoader.MEDIA_DIR_IMAGE || type == FileLoader.MEDIA_DIR_VIDEO) {
+                int publicDirectoryType;
+                if (type == FileLoader.MEDIA_DIR_IMAGE) {
+                    publicDirectoryType = FileLoader.MEDIA_DIR_IMAGE_PUBLIC;
+                } else {
+                    publicDirectoryType = FileLoader.MEDIA_DIR_VIDEO_PUBLIC;
+                }
+                file = FileLoader.checkDirectory(publicDirectoryType);
+
+                if (file != null) {
+                    CacheControlActivity.cleanDirJava(file.getAbsolutePath(), documentsMusicType, null, updateProgress);
+                }
+            }
+            if (type == FileLoader.MEDIA_DIR_DOCUMENT) {
+                file = FileLoader.checkDirectory(FileLoader.MEDIA_DIR_FILES);
+                if (file != null) {
+                    CacheControlActivity.cleanDirJava(file.getAbsolutePath(), documentsMusicType, null, updateProgress);
+                }
+            }
+        }
+
+        FileLoader.getInstance(UserConfig.selectedAccount).clearFilePaths();
+        FileLoader.getInstance(UserConfig.selectedAccount).checkCurrentDownloadsFiles();
+        ImageLoader.getInstance().clearMemory();
+
+        accountInstance.getMediaDataController().ringtoneDataStore.checkRingtoneSoundsLoaded();
+        MediaDataController.getInstance(UserConfig.selectedAccount).chekAllMedia(true);
+    }));
 }
 ```
 * 於 `onResume` 內設定事件
