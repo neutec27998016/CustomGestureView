@@ -3,6 +3,7 @@ package com.neutec.customgestureviewlib;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -26,8 +27,11 @@ public class JavaActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         globalVariable.setLogoutUnit(this::onLogoutUnit);
+        globalVariable.setForceLogoutUnit(this::onForceLogoutUnit);
         globalVariable.setSettingAccountUnit(this::onSettingAccountUnit);
-        globalVariable.setAppVersion("8.1.1");
+        globalVariable.setAppVersion("9.4.13");
+        globalVariable.setResetTime(1);
+        globalVariable.setNeedCheckAirplaneMode(false);
     }
 
     @Override
@@ -47,6 +51,11 @@ public class JavaActivity extends AppCompatActivity {
     }
 
     private Unit onLogoutUnit() {
+        return Unit.INSTANCE;
+    }
+
+    private Unit onForceLogoutUnit() {
+        Log.e("Jeff", "onForceLogoutUnit");
         return Unit.INSTANCE;
     }
 

@@ -1,13 +1,16 @@
 package com.neutec.customgestureview.activity
 
-import android.app.ActivityManager
 import android.app.AlertDialog
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.view.View
 import android.view.Window
 import android.view.WindowManager
@@ -17,7 +20,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
-import com.neutec.customgestureview.App
 import com.neutec.customgestureview.R
 import com.neutec.customgestureview.setting.SettingAccountDialog
 import com.neutec.customgestureview.utility.PatternLockUtils.*
@@ -29,6 +31,9 @@ import com.neutec.customgestureview.databinding.ActivityGestureLookBinding
 import com.neutec.customgestureview.utility.EmergencyStatusUtils
 import com.neutec.customgestureview.utility.TimerUtils
 import com.neutec.customgestureview.utility.UnitUtils
+import com.neutec.customgestureview.utility.UnitUtils.Companion.needCheckAirplaneMode
+import com.neutec.customgestureview.utility.UnitUtils.Companion.resetTime
+import com.neutec.customgestureview.utility.UnitUtils.Companion.tag
 import com.neutec.customgestureview.view.listener.OnGestureLockListener
 import com.neutec.customgestureview.view.painter.CirclePainter
 import com.neutec.customgestureview.viewmodel.GestureViewModel
@@ -46,12 +51,34 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
         ViewModelProvider(this)[GestureViewModel::class.java]
     }
     private val timer = TimerUtils().getCountDownTimer()
+    private var isAirplaneModeEverTurnedOn = false
+    private var firstErrorTime: Long = 0
+    private var errorCount = 0
+
+    //監聽飛航模式異動
+    private val airplaneModeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val isAirplaneModeOn =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    Settings.System.getInt(
+                        context.contentResolver,
+                        Settings.Global.AIRPLANE_MODE_ON, 0
+                    ) != 0
+                } else {
+                    false
+                }
+            if (isAirplaneModeOn) {
+                isAirplaneModeEverTurnedOn = true
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStatusBar()
         binding = ActivityGestureLookBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        registerReceiver(airplaneModeReceiver, IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED))
         setGestureViewModel()
         gestureViewModel.checkGestureLockFromSharedPreferences(this)
         initView()
@@ -59,6 +86,18 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
 
     override fun onResume() {
         super.onResume()
+
+        //2023/06/15 新增飛航模式檢查
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            if (Settings.System.getInt(
+                    contentResolver,
+                    Settings.Global.AIRPLANE_MODE_ON, 0
+                ) != 0
+            ) {
+                isAirplaneModeEverTurnedOn = true
+            }
+        }
+
         if (UnitUtils.appVersion.isNotBlank()) {
             if (gestureViewModel.nowType.value == GestureViewModel.SettingType.LOCK) {
                 if (gestureViewModel.checkIsNeedToShowSetting(this, UnitUtils.appVersion)) {
@@ -83,6 +122,10 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
     override fun onBackPressed() {
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(airplaneModeReceiver)
+    }
 
     override fun onStarted() {
     }
@@ -97,14 +140,73 @@ open class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
             }
             else -> {
                 binding.gestureView.showErrorStatus(1000)
+                gestureError()
             }
         }
     }
 
+    private fun gestureError() {
+        errorCount++
+        Log.e(tag, "gesture error time = $errorCount")
+        Log.w(tag, "needCheckAirplaneMode = $needCheckAirplaneMode")
+        if (needCheckAirplaneMode) {
+            if (isAirplaneModeEverTurnedOn) {
+                if (errorCount >= 5) {
+                    showErrorToast(0)
+                    UnitUtils.forceLogoutUnit?.invoke()
+                    reset()
+                } else {
+                    showErrorToast(5 - errorCount)
+                }
+            } else {
+                val durationMillis = System.currentTimeMillis() - firstErrorTime
+                if (durationMillis > resetTime * 60 * 1000) {
+                    firstErrorTime = System.currentTimeMillis()
+                    errorCount = 1
+                    showErrorToast(5 - errorCount)
+                } else if (errorCount >= 5) {
+                    showErrorToast(0)
+                    UnitUtils.forceLogoutUnit?.invoke()
+                    reset()
+                } else {
+                    showErrorToast(5 - errorCount)
+                }
+            }
+        } else {
+            Log.d(tag, "currentTimeMillis = ${System.currentTimeMillis()}")
+            Log.d(tag, "firstErrorTime = $firstErrorTime")
+            val durationMillis = System.currentTimeMillis() - firstErrorTime
+            Log.w(tag, "durationMillis = $durationMillis")
+            Log.d(tag, "resetTime = ${resetTime * 60 * 1000}")
+            if (durationMillis > resetTime * 60 * 1000) {
+                firstErrorTime = System.currentTimeMillis()
+                errorCount = 1
+                showErrorToast(5 - errorCount)
+            } else if (errorCount >= 5) {
+                showErrorToast(0)
+                UnitUtils.forceLogoutUnit?.invoke()
+                reset()
+            } else {
+                showErrorToast(5 - errorCount)
+            }
+        }
+
+    }
+
+    private fun showErrorToast(message: Int) {
+        val errorString = "Retry Limit ($message/5)"
+        Toast.makeText(this, errorString, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun reset() {
+        firstErrorTime = 0
+        errorCount = 0
+    }
+
     private fun checkAppVersion() {
         isCheckAppUpdateFinish = false
-        val apiService = AppClientManager.client.create(ApiService::class.java)
-        apiService.getVersionData().enqueue(object : Callback<VersionData> {
+        val apiService = AppClientManager.apiClient.create(ApiService::class.java)
+        apiService.getVersionData("android").enqueue(object : Callback<VersionData> {
             override fun onResponse(call: Call<VersionData>, response: Response<VersionData>) {
                 val data = response.body()?.android
                 if (isNeedUpdate(

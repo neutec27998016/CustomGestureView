@@ -143,13 +143,15 @@ public class PatternLockUtils {
         } else {
             if (!version.isEmpty()) {
                 String serverVersion = versionInfo.getVersion();
-                return doNumberFormat(serverVersion) > doNumberFormat(version);
+                return compareVersions(serverVersion, version);
             } else {
                 return false;
             }
         }
     }
 
+    @Deprecated
+    //2023/06/21 改用compareVersions
     private static int doNumberFormat(String text) {
         text = text.replace(".", "");
         if (text.length() > 5) {
@@ -157,6 +159,25 @@ public class PatternLockUtils {
         }
         String pattern = "%-5s";
         return Integer.parseInt(String.format(pattern, text).replace(" ", "0"));
+    }
+
+    public static boolean compareVersions(String apiVersion, String nowAppVersion) {
+        String[] v1 = apiVersion.split("\\.");
+        String[] v2 = nowAppVersion.split("\\.");
+
+        int maxLength = Math.max(v1.length, v2.length);
+
+        for (int i = 0; i < maxLength; i++) {
+            int v1Value = i < v1.length ? Integer.parseInt(v1[i]) : 0;
+            int v2Value = i < v2.length ? Integer.parseInt(v2[i]) : 0;
+
+            if (v1Value > v2Value) {
+                return true;
+            } else if (v1Value < v2Value) {
+                return false;
+            }
+        }
+        return false;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)

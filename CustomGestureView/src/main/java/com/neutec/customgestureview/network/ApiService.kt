@@ -4,9 +4,11 @@ import com.neutec.customgestureview.data.EmergencyData
 import com.neutec.customgestureview.data.VersionData
 import retrofit2.Call
 import retrofit2.http.GET
+import retrofit2.http.Query
 
 
 interface ApiService {
+    @Deprecated("2023/06/15 getVersion改為介接API，不再介接dropbox txt(因彈性不足，也可能造成快取問題)")
     @GET("version.txt")
     fun getVersionData(): Call<VersionData>
 
@@ -22,4 +24,7 @@ interface ApiService {
     //  IV. 當data陣列中emergency的值為0時 或 介接失敗，不做任何動作
     @GET("emergency_status.php")
     fun getEmergencyData(): Call<EmergencyData>
+
+    @GET("get_version.php")
+    fun getVersionData(@Query("os_type") type: String): Call<VersionData>
 }
