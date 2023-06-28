@@ -3,17 +3,26 @@ package com.neutec.customgestureview.viewmodel
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.os.SystemClock
 import android.text.TextUtils
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.neutec.customgestureview.R
+import com.neutec.customgestureview.data.VersionData
+import com.neutec.customgestureview.data.VersionInfo
+import com.neutec.customgestureview.network.ApiService
+import com.neutec.customgestureview.network.AppClientManager
 import com.neutec.customgestureview.utility.PatternLockUtils
 import com.neutec.customgestureview.utility.PreferenceContract
 import com.neutec.customgestureview.utility.PreferenceUtils
+import com.neutec.customgestureview.utility.UnitUtils
 import com.neutec.customgestureview.view.GestureLockView
 import me.zhanghai.android.patternlock.PatternUtils
 import me.zhanghai.android.patternlock.PatternView.Cell
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 
 class GestureViewModel(application: Application) : AndroidViewModel(application) {
@@ -23,10 +32,17 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
     private var tmpCommonGestureLockResult: String = ""
     private var tmpSpecialGestureLockResult: String = ""
     private val gestureLength = 4
+    private var firstErrorTime: Long = 0
+    private var errorCount = 0
+
+    var isCheckAppUpdateFinish = false
+    var isAirplaneModeEverTurnedOn = false
 
     var commonGestureLock = MutableLiveData<String>()
     var specialGestureLock = MutableLiveData<String>()
     var nowType = MutableLiveData<SettingType>()
+    var showErrorToast = MutableLiveData<Int>()
+    var showUpdateDialog = MutableLiveData<VersionInfo>()
 
     fun getDescribeText(): Int {
         return when (nowType.value) {
@@ -94,13 +110,13 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun checkIsNeedToShowSetting(context: Context, appVersion: String): Boolean{
+    fun checkIsNeedToShowSetting(context: Context, appVersion: String): Boolean {
         val version: String? = PreferenceUtils.getString(
             PreferenceContract.KEY_APP_VERSION,
             PreferenceContract.DEFAULT_APP_VERSION, context
         )
-        return when{
-            version == null && PatternLockUtils.getIsNeedToShowSettingDialog(context)  == null -> true
+        return when {
+            version == null && PatternLockUtils.getIsNeedToShowSettingDialog(context) == null -> true
             appVersion != version && PatternLockUtils.getIsNeedToShowSettingDialog(context) -> true
             else -> false
         }
@@ -161,10 +177,13 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
             else -> {
                 when (nowType.value) {
                     SettingType.COMMON_GESTURE_SETTING -> {
-                        if(result.length < gestureLength){
-                            showErrorToast(context, context.getString(R.string.GestureLengthNotEnough))
+                        if (result.length < gestureLength) {
+                            showErrorToast(
+                                context,
+                                context.getString(R.string.GestureLengthNotEnough)
+                            )
                             false
-                        }else {
+                        } else {
                             nowType.value = SettingType.COMMON_GESTURE_SETTING_AGAIN
                             tmpCommonGestureLockResult = result
                             true
@@ -180,10 +199,13 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
                         }
                     }
                     SettingType.SPECIAL_GESTURE_SETTING -> {
-                        if(result.length < gestureLength){
-                            showErrorToast(context, context.getString(R.string.GestureLengthNotEnough))
+                        if (result.length < gestureLength) {
+                            showErrorToast(
+                                context,
+                                context.getString(R.string.GestureLengthNotEnough)
+                            )
                             false
-                        }else {
+                        } else {
                             checkSpecialGestureLegal(context, result)
                         }
                     }
@@ -201,6 +223,57 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
         }
+    }
+
+    fun gestureError() {
+        errorCount++
+        if (UnitUtils.needCheckAirplaneMode) {
+            if (isAirplaneModeEverTurnedOn) {
+                if (errorCount >= 5) {
+                    showErrorToast.postValue(0)
+                    UnitUtils.forceLogoutUnit?.invoke()
+                    reset()
+                } else {
+                    showErrorToast.postValue(5 - errorCount)
+                }
+            } else {
+                commonError()
+            }
+        } else {
+            commonError()
+        }
+    }
+
+    fun checkAppVersion() {
+        isCheckAppUpdateFinish = false
+        val apiService = AppClientManager.apiClient.create(ApiService::class.java)
+        apiService.getVersionData("android").enqueue(object : Callback<VersionData> {
+            override fun onResponse(call: Call<VersionData>, response: Response<VersionData>) {
+                val data = response.body()?.android
+                if (PatternLockUtils.isNeedUpdate(
+                        VersionInfo(
+                            data?.force,
+                            data?.version,
+                            data?.downloadUrl
+                        ), UnitUtils.appVersion
+                    ) && !PatternLockUtils.isUpdateDialogShowed
+                ) {
+                    showUpdateDialog.postValue(
+                        VersionInfo(
+                            data?.force,
+                            data?.version,
+                            data?.downloadUrl
+                        )
+                    )
+                } else {
+                    isCheckAppUpdateFinish = true
+                }
+            }
+
+            override fun onFailure(call: Call<VersionData>, t: Throwable) {
+                isCheckAppUpdateFinish = true
+            }
+        })
     }
 
     private fun checkSpecialGestureLegal(context: Context, result: String): Boolean {
@@ -248,7 +321,31 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
         return list
     }
 
-    private fun showErrorToast(context: Context, error: String){
+    private fun showErrorToast(context: Context, error: String) {
         Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun commonError() {
+        val durationMillis = SystemClock.elapsedRealtime() - firstErrorTime
+        if (durationMillis > UnitUtils.resetTime * 60 * 1000) {
+            firstTimeError()
+        } else if (errorCount >= 5) {
+            showErrorToast.postValue(0)
+            UnitUtils.forceLogoutUnit?.invoke()
+            reset()
+        } else {
+            showErrorToast.postValue(5 - errorCount)
+        }
+    }
+
+    private fun firstTimeError() {
+        firstErrorTime = SystemClock.elapsedRealtime()
+        errorCount = 1
+        showErrorToast.postValue(5 - errorCount)
+    }
+
+    private fun reset() {
+        firstErrorTime = 0
+        errorCount = 0
     }
 }
