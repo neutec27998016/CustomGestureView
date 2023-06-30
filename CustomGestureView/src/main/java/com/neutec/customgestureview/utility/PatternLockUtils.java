@@ -91,6 +91,26 @@ public class PatternLockUtils {
                 PreferenceContract.DEFAULT_IS_SHOW_SETTING_DIALOG_AFTER_UPDATE, context);
     }
 
+    public static void setGestureFirstErrorTime(long time, Context context) {
+        PreferenceUtils.putLong(PreferenceContract.KEY_GESTURE_FIRST_ERROR_TIME,
+                time, context);
+    }
+
+    public static long getGestureFirstErrorTime(Context context) {
+        return PreferenceUtils.getLong(PreferenceContract.KEY_GESTURE_FIRST_ERROR_TIME,
+                0, context);
+    }
+
+    public static void setGestureErrorCount(int count, Context context) {
+        PreferenceUtils.putInt(PreferenceContract.KEY_GESTURE_ERROR_COUNT,
+                count, context);
+    }
+
+    public static int getGestureErrorCount(Context context) {
+        return PreferenceUtils.getInt(PreferenceContract.KEY_GESTURE_ERROR_COUNT,
+                0, context);
+    }
+
     public static void setActiveAccountList(ArrayList<UserData> list) {
         activeAccountList = list;
     }

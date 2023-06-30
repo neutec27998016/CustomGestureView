@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.os.SystemClock
 import android.text.TextUtils
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
@@ -13,10 +14,9 @@ import com.neutec.customgestureview.data.VersionData
 import com.neutec.customgestureview.data.VersionInfo
 import com.neutec.customgestureview.network.ApiService
 import com.neutec.customgestureview.network.AppClientManager
-import com.neutec.customgestureview.utility.PatternLockUtils
-import com.neutec.customgestureview.utility.PreferenceContract
-import com.neutec.customgestureview.utility.PreferenceUtils
-import com.neutec.customgestureview.utility.UnitUtils
+import com.neutec.customgestureview.utility.*
+import com.neutec.customgestureview.utility.UnitUtils.Companion.resetTime
+import com.neutec.customgestureview.utility.UnitUtils.Companion.tag
 import com.neutec.customgestureview.view.GestureLockView
 import me.zhanghai.android.patternlock.PatternUtils
 import me.zhanghai.android.patternlock.PatternView.Cell
@@ -41,6 +41,7 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
     var commonGestureLock = MutableLiveData<String>()
     var specialGestureLock = MutableLiveData<String>()
     var nowType = MutableLiveData<SettingType>()
+    var gestureErrorCount = MutableLiveData<Int>()
     var showErrorToast = MutableLiveData<Int>()
     var showUpdateDialog = MutableLiveData<VersionInfo>()
 
@@ -225,23 +226,59 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun gestureError() {
-        errorCount++
-        if (UnitUtils.needCheckAirplaneMode) {
-            if (isAirplaneModeEverTurnedOn) {
-                if (errorCount >= 5) {
-                    showErrorToast.postValue(0)
-                    UnitUtils.forceLogoutUnit?.invoke()
-                    reset()
-                } else {
-                    showErrorToast.postValue(5 - errorCount)
-                }
-            } else {
-                commonError()
+    fun gestureError(context: Context) {
+        val firstErrorTime = PatternLockUtils.getGestureFirstErrorTime(context)
+        var errorCount = PatternLockUtils.getGestureErrorCount(context)
+        val currentTime = SystemClock.elapsedRealtime()
+        when {
+            UnitUtils.needCheckAirplaneMode && isAirplaneModeEverTurnedOn -> {
+                //飛航模式曾經開啟
+                errorCount++
+                Log.w(tag, "gestureError: 飛航模式曾經開啟 ； errorCount = $errorCount")
             }
-        } else {
-            commonError()
+
+            currentTime < firstErrorTime -> {
+                //手機被重啟過
+                errorCount++
+                PatternLockUtils.setGestureFirstErrorTime(currentTime, context)
+                Log.w(tag, "gestureError: 手機被重啟過 ； errorCount = $errorCount")
+            }
+
+            currentTime > firstErrorTime -> {
+                when {
+                    currentTime - firstErrorTime > resetTime * 60 * 1000 -> {
+                        //與上一次錯誤間隔超過設定
+                        errorCount = 1
+                        Log.w(tag, "gestureError: 與上一次錯誤間隔超過設定 ； errorCount = $errorCount")
+                    }
+                    else -> {
+                        errorCount++
+                        Log.w(tag, "gestureError: 與上一次錯誤間隔在設定內 ； errorCount = $errorCount")
+                    }
+                }
+            }
         }
+
+        when (errorCount) {
+            1 -> {
+                PatternLockUtils.setGestureFirstErrorTime(currentTime, context)
+                PatternLockUtils.setGestureErrorCount(errorCount, context)
+                showErrorToast.postValue(4)
+            }
+            5 -> {
+                resetGestureError(context)
+                UnitUtils.forceLogoutUnit?.invoke()
+            }
+            else -> {
+                PatternLockUtils.setGestureErrorCount(errorCount, context)
+                showErrorToast.postValue(5 - errorCount)
+            }
+        }
+    }
+
+    fun resetGestureError(context: Context) {
+        PatternLockUtils.setGestureFirstErrorTime(0, context)
+        PatternLockUtils.setGestureErrorCount(0, context)
     }
 
     fun checkAppVersion() {
@@ -323,29 +360,5 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
 
     private fun showErrorToast(context: Context, error: String) {
         Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun commonError() {
-        val durationMillis = SystemClock.elapsedRealtime() - firstErrorTime
-        if (durationMillis > UnitUtils.resetTime * 60 * 1000) {
-            firstTimeError()
-        } else if (errorCount >= 5) {
-            showErrorToast.postValue(0)
-            UnitUtils.forceLogoutUnit?.invoke()
-            reset()
-        } else {
-            showErrorToast.postValue(5 - errorCount)
-        }
-    }
-
-    private fun firstTimeError() {
-        firstErrorTime = SystemClock.elapsedRealtime()
-        errorCount = 1
-        showErrorToast.postValue(5 - errorCount)
-    }
-
-    private fun reset() {
-        firstErrorTime = 0
-        errorCount = 0
     }
 }

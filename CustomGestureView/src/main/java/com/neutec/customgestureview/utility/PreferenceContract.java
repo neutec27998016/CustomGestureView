@@ -16,7 +16,10 @@ public class PreferenceContract {
     public static final String KEY_USER_ID = "pref_key_user_id";
     public static final String KEY_USER_ID_SET = "pref_key_user_id_set";
     public static final String KEY_IS_SHOW_SETTING_DIALOG_AFTER_UPDATE = "pref_key_is_show_setting_dialog_after_update";
+    public static final String KEY_GESTURE_FIRST_ERROR_TIME = "pref_key_gesture_first_error_time";
+    public static final String KEY_GESTURE_ERROR_COUNT = "pref_key_gesture_error_count";
     public static final String DEFAULT_USER_ID = null;
     public static final Boolean DEFAULT_IS_SHOW_SETTING_DIALOG_AFTER_UPDATE = true;
     public static final Set<String> DEFAULT_USER_ID_SET = new HashSet<>();
+
 }

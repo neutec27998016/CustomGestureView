@@ -121,7 +121,7 @@ class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
             else -> {
                 binding.gestureView.showErrorStatus(1000)
                 if (gestureViewModel.nowType.value == GestureViewModel.SettingType.LOCK) {
-                    gestureViewModel.gestureError()
+                    gestureViewModel.gestureError(this)
                 }
             }
         }
@@ -377,6 +377,7 @@ class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
     private fun finishActivity() {
         if (gestureViewModel.isCheckAppUpdateFinish) {
             isNeedtoShowGestureLock = false
+            gestureViewModel.resetGestureError(this)
             finish()
         }
     }

@@ -30,8 +30,8 @@ public class JavaActivity extends AppCompatActivity {
         globalVariable.setForceLogoutUnit(this::onForceLogoutUnit);
         globalVariable.setSettingAccountUnit(this::onSettingAccountUnit);
         globalVariable.setAppVersion("9.4.13");
-        globalVariable.setResetTime(1);
-        globalVariable.setNeedCheckAirplaneMode(false);
+        globalVariable.setResetTime(10);
+        globalVariable.setNeedCheckAirplaneMode(true);
     }
 
     @Override
