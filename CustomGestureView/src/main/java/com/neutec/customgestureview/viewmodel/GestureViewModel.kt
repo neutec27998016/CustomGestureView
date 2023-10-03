@@ -309,6 +309,7 @@ class GestureViewModel(application: Application) : AndroidViewModel(application)
 
             override fun onFailure(call: Call<VersionData>, t: Throwable) {
                 isCheckAppUpdateFinish = true
+                Log.e(tag, "getVersionData error = ${t.localizedMessage}")
             }
         })
     }

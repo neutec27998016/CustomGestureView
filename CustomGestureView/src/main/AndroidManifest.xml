@@ -3,7 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.neutec.customgestureview">
 
-    <permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <permission android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:ignore="ReservedSystemPermission" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="false"

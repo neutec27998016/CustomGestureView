@@ -31,7 +31,7 @@ class EmergencyStatusUtils {
 
             override fun onFailure(call: Call<EmergencyData>, t: Throwable) {
                 //介接失敗，不做任何動作
-                Log.e(tag, "error = ${t.message}")
+                Log.e(tag, "getEmergencyData error = ${t.localizedMessage}")
             }
         })
     }
