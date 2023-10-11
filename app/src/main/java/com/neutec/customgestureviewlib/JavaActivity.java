@@ -32,7 +32,7 @@ public class JavaActivity extends AppCompatActivity {
         globalVariable.setAppVersion("9.4.13");
         globalVariable.setResetTime(10);
         globalVariable.setNeedCheckAirplaneMode(true);
-        globalVariable.setPackageName(this.getPackageName());
+        globalVariable.isDebugMode(BuildConfig.DEBUG);
     }
 
     @Override

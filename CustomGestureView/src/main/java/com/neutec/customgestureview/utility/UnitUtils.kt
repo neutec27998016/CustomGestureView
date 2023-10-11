@@ -15,7 +15,7 @@ class UnitUtils {
         var resetTime = 30 //預設為30分
 
         //2023/10/11新增
-        var packageName = ""
+        var isDebugmode = false
     }
 
     fun getLogoutUnit(): (() -> Unit)? {
@@ -77,8 +77,8 @@ class UnitUtils {
         return resetTime
     }
 
-    fun setPackageName(name: String) {
-        packageName = name
+    fun isDebugMode(boolean: Boolean) {
+        isDebugmode = boolean
     }
     //----------------------------------------------------------------//
 }

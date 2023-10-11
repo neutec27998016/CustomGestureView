@@ -13,25 +13,18 @@ class AppClientManager {
     private val okHttpClient = OkHttpClient()
     private val testDomain = "https://dev-emergency.gogocell.xyz/api/"
     private val releaseDomain = "https://emergency.gogocell.xyz/api/"
-    private var isDebug = false
 
 
     init {
-        try{
-            val name = UnitUtils.packageName + ".BuildConfig"
-            isDebug = Class.forName(name)
-                .getField("DEBUG")
-                .getBoolean(null)
-        }catch (e: Exception){
-            Log.e("AppClientManager", "error = ${e.localizedMessage}")
-        }
-
         apiRetrofit = Retrofit.Builder()
-            .baseUrl(if (isDebug) testDomain else releaseDomain)
+            .baseUrl(if (UnitUtils.isDebugmode) testDomain else releaseDomain)
             .addConverterFactory(GsonConverterFactory.create())
             .client(okHttpClient)
             .build()
-        Log.w("AppClientManager", "isDebug = $isDebug, domain = ${if (isDebug) testDomain else releaseDomain}")
+        Log.w(
+            "AppClientManager",
+            "isDebugMode = ${UnitUtils.isDebugmode}, domain = ${if (UnitUtils.isDebugmode) testDomain else releaseDomain}"
+        )
     }
 
     companion object {
