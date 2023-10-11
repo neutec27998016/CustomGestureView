@@ -13,6 +13,9 @@ class UnitUtils {
         //2023/06/21新增
         var needCheckAirplaneMode = false //現階段不開啟檢查飛航模式版本
         var resetTime = 30 //預設為30分
+
+        //2023/10/11新增
+        var packageName = ""
     }
 
     fun getLogoutUnit(): (() -> Unit)? {
@@ -72,6 +75,10 @@ class UnitUtils {
 
     fun getResetTime(): Int {
         return resetTime
+    }
+
+    fun setPackageName(name: String) {
+        packageName = name
     }
     //----------------------------------------------------------------//
 }
