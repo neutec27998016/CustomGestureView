@@ -16,15 +16,20 @@ import android.view.WindowManager
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.neutec.customgestureview.R
-import com.neutec.customgestureview.setting.SettingAccountDialog
-import com.neutec.customgestureview.utility.PatternLockUtils.*
 import com.neutec.customgestureview.data.VersionInfo
 import com.neutec.customgestureview.databinding.ActivityGestureLookBinding
+import com.neutec.customgestureview.setting.SettingAccountDialog
 import com.neutec.customgestureview.utility.EmergencyStatusUtils
+import com.neutec.customgestureview.utility.PatternLockUtils.clearPattern
+import com.neutec.customgestureview.utility.PatternLockUtils.getActiveAccountList
+import com.neutec.customgestureview.utility.PatternLockUtils.isNeedtoShowGestureLock
+import com.neutec.customgestureview.utility.PatternLockUtils.isUpdateDialogShowed
+import com.neutec.customgestureview.utility.PatternLockUtils.setIsNeedToShowSettingDialog
 import com.neutec.customgestureview.utility.UnitUtils
 import com.neutec.customgestureview.view.listener.OnGestureLockListener
 import com.neutec.customgestureview.view.painter.CirclePainter
@@ -68,6 +73,13 @@ class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
         setGestureViewModel()
         gestureViewModel.checkGestureLockFromSharedPreferences(this)
         initView()
+
+        val callback: OnBackPressedCallback =
+            object : OnBackPressedCallback(true /* enabled by default */) {
+                override fun handleOnBackPressed() {
+                }
+            }
+        onBackPressedDispatcher.addCallback(this, callback)
     }
 
     override fun onResume() {
@@ -97,9 +109,6 @@ class CustomGestureActivity : AppCompatActivity(), OnGestureLockListener {
 
         gestureViewModel.checkAppVersion()
         EmergencyStatusUtils().checkEmergencyStatus()
-    }
-
-    override fun onBackPressed() {
     }
 
     override fun onDestroy() {
