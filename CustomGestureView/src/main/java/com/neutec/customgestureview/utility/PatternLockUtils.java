@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
@@ -158,7 +159,8 @@ public class PatternLockUtils {
     }
 
     public static boolean isNeedUpdate(VersionInfo versionInfo, String version) {
-        if (versionInfo == null) {
+        //2024/02/06 修正防呆措施，以防外網被擋導致getVersion回來的資料為null
+        if (versionInfo == null || versionInfo.getVersion() == null || versionInfo.getDownloadUrl() == null || versionInfo.getForce() == null) {
             return false;
         } else {
             if (!version.isEmpty()) {
