@@ -213,7 +213,7 @@ private void clearCache() {
         ImageLoader.getInstance().clearMemory();
 
         accountInstance.getMediaDataController().ringtoneDataStore.checkRingtoneSoundsLoaded();
-        MediaDataController.getInstance(UserConfig.selectedAccount).chekAllMedia(true);
+        MediaDataController.getInstance(UserConfig.selectedAccount).checkAllMedia(true);
     }));
 }
 ```
