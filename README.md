@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-  implementation 'com.github.neutec27998016:CustomGestureView:1.0.0'
+  implementation 'com.github.neutec27998016:CustomGestureView:1.0.13'
 }
 ```
 * 於`build.gradle`(TMessagesProj_App)內修改特定值
