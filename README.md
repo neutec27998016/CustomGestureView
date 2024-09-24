@@ -60,6 +60,7 @@ import com.neutec.customgestureview.utility.TimerUtils;
 import com.neutec.customgestureview.utility.UnitUtils;
 import kotlin.Unit;
 import android.os.CountDownTimer;
+import org.telegram.messenger.BuildConfig;
 ```
     
 * 宣告 `UnitUtils` 與 `CountDownTimer`
@@ -74,6 +75,7 @@ unitUtils.setLogoutUnit(this::onLogoutUnit);
 unitUtils.setForceLogoutUnit(this::onForceLogoutUnit);
 unitUtils.setSettingAccountUnit(this::onSettingAccountUnit);
 unitUtils.setAppVersion(BUILD_VERSION_STRING); //版本號
+unitUtils.isDebugMode(BuildConfig.DEBUG);
 ```
 ```java
 private Unit onLogoutUnit() {
